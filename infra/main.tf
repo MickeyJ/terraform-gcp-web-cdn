@@ -1,23 +1,43 @@
-# Bucket to store website
+
+resource "random_id" "bucket_prefix" {
+  byte_length = 8
+}
+
+# Bucket for website
 resource "google_storage_bucket" "website" {
-  provider = google
-  name     = "example-website-by-mickster"
-  location = "US"
+  provider                    = google
+  name                        = "${random_id.bucket_prefix.hex}-mickey-web-app"
+  location                    = "US"
+  uniform_bucket_level_access = true
+  storage_class               = "STANDARD"
+  force_destroy               = true
+  website {
+    main_page_suffix = "index.html"
+    not_found_page   = "404.html"
+  }
 }
 
 # Make the bucket publicly accessible
-resource "google_storage_object_access_control" "public_rule" {
-  object = google_storage_bucket_object.static_site_src.name
+resource "google_storage_bucket_iam_member" "default" {
   bucket = google_storage_bucket.website.name
-  role   = "READER"
-  entity = "allUsers"
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
 }
 
 # Upload the website files to the bucket
 resource "google_storage_bucket_object" "static_site_src" {
-  name   = "index.html"
-  source = "../website/index.html"
-  bucket = google_storage_bucket.website.name
+  name         = "index.html"
+  source       = "../website/index.html"
+  content_type = "text/html"
+  bucket       = google_storage_bucket.website.name
+}
+
+# Upload a simple 404 / error page to the bucket
+resource "google_storage_bucket_object" "errorpage" {
+  name         = "404.html"
+  source       = "../website/404.html"
+  content_type = "text/html"
+  bucket       = google_storage_bucket.website.name
 }
 
 # reserve an external IP address for the load balancer
@@ -49,6 +69,14 @@ resource "google_compute_backend_bucket" "website_backend" {
   bucket_name = google_storage_bucket.website.name
   description = "Contains the static website files"
   enable_cdn  = true
+  cdn_policy {
+    cache_mode        = "CACHE_ALL_STATIC"
+    client_ttl        = 3600
+    default_ttl       = 3600
+    max_ttl           = 86400
+    negative_caching  = true
+    serve_while_stale = 86400
+  }
 }
 
 # Create HTTPS certificate
