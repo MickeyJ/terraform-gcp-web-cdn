@@ -1,5 +1,7 @@
 # Terraform GCP Web CDN
 
+> **Live Demo:** [app.mickeymalotte.com](https://app.mickeymalotte.com)
+
 This project provides Terraform configurations to deploy a web application on Google Cloud Platform (GCP) with Cloud CDN enabled. It automates the provisioning of necessary resources such as storage buckets, backend services, load balancers, and CDN configuration.
 
 ## Features
