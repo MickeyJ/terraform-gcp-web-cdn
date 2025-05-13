@@ -27,17 +27,15 @@ resource "google_compute_global_address" "website_ip" {
 }
 
 # Get managed DNS zone
-# NEED TO SET UP CHANGE THIS TO MY DNS ZONE
-resource "google_dns_managed_zone" "dns_zone?" {
+data "google_dns_managed_zone" "dns_zone" {
   provider = google
-  name     = "example-zone?"
-  dns_name = "example.com.?"
+  name     = "mickey-web-app"
 }
 
 # Add IP to DNS record
 resource "google_dns_record_set" "website" {
   provider     = google
-  name         = "website.${data.google_dns_managed_zone.dns_zone.dns_name}"
+  name         = data.google_dns_managed_zone.dns_zone.dns_name
   type         = "A"
   ttl          = 300
   managed_zone = data.google_dns_managed_zone.dns_zone.name
@@ -93,5 +91,5 @@ resource "google_compute_global_forwarding_rule" "default" {
   ip_address            = google_compute_global_address.website_ip.address
   ip_protocol           = "TCP"
   port_range            = "443"
-  target                = google_compute_target_http_proxy.website.self_link
+  target                = google_compute_target_https_proxy.website.self_link
 }
